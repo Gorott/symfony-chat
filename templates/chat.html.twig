@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="d-flex vh-100">
+
+        {# Sidebar for Chat Rooms/Contacts #}
+        <div class="bg-dark text-white p-3 d-flex flex-column" style="width: 280px;">
+            <h4 class="text-center">Chats</h4>
+            <ul class="list-unstyled flex-grow-1 overflow-auto">
+                {% for room in chatRooms %}
+                    <li class="p-2 {% if room.id == currentRoom.id %}bg-primary{% else %}bg-dark{% endif %}">
+                        <a href="{{ path('app_chat_room', {'id': room.id}) }}" class="text-white text-decoration-none d-block">
+                            {{ room.name }}
+                        </a>
+                    </li>
+                {% else %}
+                    <p class="text-muted text-center">No chats available</p>
+                {% endfor %}
+            </ul>
+            <div class="text-center">
+                <a href="#" class="btn btn-light btn-sm w-100" data-bs-toggle="modal" data-bs-target="#newChatModal">New Chat</a>
+            </div>
+        </div>
+
+        {# Main Chat Area #}
+        <div class="d-flex flex-column flex-grow-1">
+
+            {# Chat Header #}
+            <div class="bg-primary text-white text-center py-3">
+                <h2 class="mb-0">{{ currentRoom.name ?? 'Select a Chat' }}</h2>
+            </div>
+
+            {# Messages Container #}
+            <div id="chat-box" class="flex-grow-1 p-3 overflow-auto bg-light">
+                {% for message in currentRoom.messages %}
+                    <div class="d-flex {% if message.author == app.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+                        <div class="p-2 rounded {% if message.author == app.user %}bg-primary text-white{% else %}bg-secondary text-light{% endif %}">
+                            <strong>{{ message.author.username }}</strong>: {{ message.content }}
+                            <small class="d-block">{{ message.createdAt|date('H:i') }}</small>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No messages yet. Start the conversation!</p>
+                {% endfor %}
+            </div>
+
+            {# Input Field #}
+            {% if app.user and currentRoom %}
+                <form method="post" action="{{ path('app_send_message', {'id': currentRoom.id}) }}" class="d-flex p-3 bg-white border-top">
+                    {{ form_start(sendMessageForm, {'attr': {'class': 'form', 'id': 'newChatForm'}}) }}
+                    {{ form_widget(sendMessageForm.content) }}
+                    {{ form_end(sendMessageForm) }}
+            {% elseif app.user %}
+                <div class="text-center py-3 bg-white border-top">
+                    <p class="text-muted">Select a chat room to start messaging.</p>
+                </div>
+            {% else %}
+                <div class="text-center py-3 bg-white border-top">
+                    <p class="text-warning">Please <a href="{{ path('app_login') }}">log in</a> to chat.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal for New Chat -->
+    <div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-secondary shadow-lg rounded-3">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="newChatModalLabel">Create New Chat</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{{ path('app_new_chat') }}">
+                        {{ form_start(createChatForm, {'attr': {'class': 'form', 'id': 'newChatForm'}}) }}
+                        <div class="mb-3">
+                            {{ form_label(createChatForm.chatName, 'Chat Name') }}
+                            {{ form_widget(createChatForm.chatName) }}
+                        </div>
+                        {{ form_end(createChatForm) }}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const chatBox = document.getElementById("chat-box");
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Optional: Auto-close the modal after form submission
+            document.getElementById('newChatForm').addEventListener('submit', function() {
+                // Delay closing modal to allow form submission
+                setTimeout(() => {
+                    let modal = new bootstrap.Modal(document.getElementById('newChatModal'));
+                    modal.hide();
+                }, 500);
+            });
+        });
+    </script>
+{% endblock %}

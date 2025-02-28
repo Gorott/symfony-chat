@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-1 fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ path('app_home') }}">
+                <p class="ps-2 d-inline fw-bold">
+                    Chat
+                </p>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-collapsable" aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle Navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbar-colapsable">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                </ul>
+                {% if not app.user %}
+                    <a href="{{ path('app_login') }}" class="btn btn-dark">Log in</a>
+                    <a href="{{ path('app_register') }}" class="btn btn-light">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Log in{% endblock %}
+
+{% block body %}
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="card shadow-lg p-4 rounded-4 bg-dark border-light" style="max-width: 400px; width: 100%;">
+            <h2 class="text-center mb-4 text-light">Log In</h2>
+            {% if error %}
+                <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+            {% endif %}
+            <form method="post">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <div class="mb-3">
+                    <label for="username" class="form-label text-light">Email or Username</label>
+                    <input type="text" id="username" name="username" value="{{ last_username }}"class="form-control bg-secondary text-light border-0" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label text-light">Password</label>
+                    <input type="password" id="password" name="password" class="form-control bg-secondary text-light border-0" required>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" id="remember_me" name="_remember_me" class="form-check-input">
+                    <label for="remember_me" class="form-check-label text-light">Remember me</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Log in</button>
+            </form>
+            <div class="text-center mt-2">
+                <span class="text-light">New here?</span> <a href="{{ path('app_register') }}" class="text-primary">Sign up</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
