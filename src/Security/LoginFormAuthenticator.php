@@ -62,7 +62,7 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        return new RedirectResponse($this->router->generate('app_chat_room', ['id' => 1]));
+        return new RedirectResponse($this->router->generate('app_chat'));
     }
 
     protected function getLoginUrl(Request $request): string

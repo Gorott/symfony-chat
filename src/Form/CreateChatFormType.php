@@ -3,8 +3,10 @@
 namespace App\Form;
 
 use App\Entity\Chat;
-
+use App\Form\Type\TagsInputType;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\SearchType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -21,6 +23,15 @@ class CreateChatFormType extends AbstractType
                 'attr' => [
                     'class' => 'form-control bg-secondary text-light border-0'
                 ]
+            ])
+            ->add('participants', TagsInputType::class, [
+                'label' => 'Participants',
+                'required' => false,
+                'attr' => [
+                    'id' => 'search-participants',
+                    'placeholder' => 'Search for participants...',
+                    'autocomplete' => 'off',
+                ],
             ])
             ->add('submit', SubmitType::class, [
                 'label' => 'Create Chat',

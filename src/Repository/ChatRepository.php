@@ -47,32 +47,27 @@ class ChatRepository extends ServiceEntityRepository
         }
     }
 
-    // /**
-    //  * @return Chat[] Returns an array of Chat objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    // Find all chats where the user is a member
+    public function findAllChatsByUser($user)
     {
         return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('c.id', 'ASC')
-            ->setMaxResults(10)
+            ->join('c.users', 'u')
+            ->where('u.id = :user')
+            ->leftJoin('c.messages', 'm')
+            ->setParameter('user', $user)
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
     }
-    */
 
-    /*
-    public function findOneBySomeField($value): ?Chat
+    public function isUserMemberOfChat($user, $chatId)
     {
         return $this->createQueryBuilder('c')
-            ->andWhere('c.exampleField = :val')
-            ->setParameter('val', $value)
+            ->join('c.users', 'u')
+            ->where('u.id = :user')
+            ->andWhere('c.id = :chatId')
+            ->setParameter('user', $user)
+            ->setParameter('chatId', $chatId)
             ->getQuery()
-            ->getOneOrNullResult()
-        ;
+            ->getOneOrNullResult();
     }
-    */
 }

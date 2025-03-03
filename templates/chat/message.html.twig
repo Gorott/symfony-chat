@@ -1,0 +1,12 @@
+
+{% block body %}
+
+    <div class="d-flex {% if message.author == app.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2" data-id="message-{{ message.id }}">
+        <div class="p-2 rounded {% if message.author == app.user %}bg-primary text-white{% else %}bg-secondary text-light{% endif %} message">
+            <strong>{{ message.author.username }}</strong>: {{ message.content }}
+            <small class="d-block">{{ message.createdAt|date('H:i') }}</small>
+            <div class="dropdown">
+            </div>
+        </div>
+    </div>
+{% endblock %}

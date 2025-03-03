@@ -2,19 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Chat;
 
 use App\Entity\Chat;
 use App\Form\CreateChatFormType;
-use App\Form\SendMessageFormType;
 use App\Repository\ChatRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class ChatController extends AbstractController
+class IndexChatController extends AbstractController
 {
-
 
     public function __construct(
         protected ChatRepository $chatRepository
@@ -23,32 +21,21 @@ class ChatController extends AbstractController
     }
 
     /**
-     * @Route("/chat/{id}", name="app_chat_room")
+     * @Route("/chat", name="app_chat")
      */
-    public function __invoke(string $id): Response
+    public function __invoke(): Response
     {
         if (!$this->getUser()) {
             return $this->redirectToRoute('app_login');
         }
 
-        if (!$this->chatRepository->isUserMemberOfChat($this->getUser(), $id)) {
-            return $this->redirectToRoute('app_chat');
-        }
-
-
-
-        $chat = $this->chatRepository->find($id);
         $createChatForm = $this->createForm(CreateChatFormType::class);
-        $sendMessageForm = $this->createForm(SendMessageFormType::class);
-
         $chatRooms = $this->chatRepository->findAllChatsByUser($this->getUser());
-
         return $this->render('chat.html.twig', [
-            'messages' => [],
             'chatRooms' => $chatRooms,
-            'currentRoom' => $chat,
+            'currentRoom' => null,
             'createChatForm' => $createChatForm->createView(),
-            'sendMessageForm' => $sendMessageForm->createView(),
+            'sendMessageForm' => null,
         ]);
     }
 }

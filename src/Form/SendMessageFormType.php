@@ -20,6 +20,7 @@ class SendMessageFormType extends AbstractType
                 'attr' => [
                     'class' => 'form-control me-2',
                     'placeholder' => 'Type your message here...',
+                    'autocomplete' => 'off',
                 ]
             ])
             ->add('submit', SubmitType::class, [

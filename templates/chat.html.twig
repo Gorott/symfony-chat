@@ -3,12 +3,11 @@
 {% block body %}
     <div class="d-flex vh-100">
 
-        {# Sidebar for Chat Rooms/Contacts #}
         <div class="bg-dark text-white p-3 d-flex flex-column" style="width: 280px;">
             <h4 class="text-center">Chats</h4>
             <ul class="list-unstyled flex-grow-1 overflow-auto">
                 {% for room in chatRooms %}
-                    <li class="p-2 {% if room.id == currentRoom.id %}bg-primary{% else %}bg-dark{% endif %}">
+                    <li class="p-2 {% if currentRoom is not null and room.id == currentRoom.id %}bg-primary{% else %}bg-dark{% endif %}">
                         <a href="{{ path('app_chat_room', {'id': room.id}) }}" class="text-white text-decoration-none d-block">
                             {{ room.name }}
                         </a>
@@ -22,29 +21,45 @@
             </div>
         </div>
 
-        {# Main Chat Area #}
+
         <div class="d-flex flex-column flex-grow-1">
 
-            {# Chat Header #}
             <div class="bg-primary text-white text-center py-3">
                 <h2 class="mb-0">{{ currentRoom.name ?? 'Select a Chat' }}</h2>
             </div>
 
-            {# Messages Container #}
             <div id="chat-box" class="flex-grow-1 p-3 overflow-auto bg-light">
-                {% for message in currentRoom.messages %}
-                    <div class="d-flex {% if message.author == app.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
-                        <div class="p-2 rounded {% if message.author == app.user %}bg-primary text-white{% else %}bg-secondary text-light{% endif %}">
-                            <strong>{{ message.author.username }}</strong>: {{ message.content }}
-                            <small class="d-block">{{ message.createdAt|date('H:i') }}</small>
-                        </div>
+                {% if currentRoom is not null %}
+                    {% set lastMessageDate = null %}
+
+                    {% for message in currentRoom.messages %}
+                        {% set messageDate = message.createdAt|date('Y-m-d') %}
+                        {% set formattedDate = message.createdAt|chat_date %}
+
+                        {% if lastMessageDate is not same as(messageDate) %}
+                            <div class="d-flex align-items-center my-3">
+                                <hr class="flex-grow-1">
+                                <span class="mx-3 text-muted small">{{ formattedDate }}</span>
+                                <hr class="flex-grow-1">
+                            </div>
+                        {% endif %}
+
+                        {% include 'chat/message.html.twig' %}
+
+                        {% set lastMessageDate = messageDate %}
+                    {% else %}
+                        <p class="text-muted text-center">No messages yet. Start the conversation!</p>
+                    {% endfor %}
+
+                    <div class="dropdown-menu custom-dropdown" id="sharedDropdownMenu">
+                        <a class="dropdown-item" href="#">Reply</a>
+                        <a class="dropdown-item" href="#">Forward</a>
+                        <a class="dropdown-item" href="#">Delete</a>
                     </div>
-                {% else %}
-                    <p class="text-muted text-center">No messages yet. Start the conversation!</p>
-                {% endfor %}
+                {% endif %}
             </div>
 
-            {# Input Field #}
+
             {% if app.user and currentRoom %}
                 <form method="post" action="{{ path('app_send_message', {'id': currentRoom.id}) }}" class="d-flex p-3 bg-white border-top">
                     {{ form_start(sendMessageForm, {'attr': {'class': 'form', 'id': 'newChatForm'}}) }}
@@ -62,7 +77,7 @@
         </div>
     </div>
 
-    <!-- Modal for New Chat -->
+
     <div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-light border-secondary shadow-lg rounded-3">
@@ -71,12 +86,16 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" action="{{ path('app_new_chat') }}">
-                        {{ form_start(createChatForm, {'attr': {'class': 'form', 'id': 'newChatForm'}}) }}
+                    <form method="post" action="{{ path('app_new_chat') }}" id="newChatForm">
+                        {{ form_start(createChatForm, {'attr': {'class': 'form'}}) }}
                         <div class="mb-3">
-                            {{ form_label(createChatForm.chatName, 'Chat Name') }}
+                            {{ form_label(createChatForm.chatName) }}
                             {{ form_widget(createChatForm.chatName) }}
                         </div>
+                        <div class="mb-3">
+                            {{ form_row(createChatForm.participants) }}
+                        </div>
+
                         {{ form_end(createChatForm) }}
                     </form>
                 </div>
@@ -85,23 +104,69 @@
     </div>
 
 
+
     {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            console.log("Chat page loaded");
             const chatBox = document.getElementById("chat-box");
             chatBox.scrollTop = chatBox.scrollHeight;
+            const tagsInput = document.querySelector('.tags-input');
+            if (tagsInput) {
+                $(tagsInput).tagsinput({
+                    maxTags: 20,
+                    delimiter: [','],
+                });
+            }
+            $(".message").on("contextmenu", function(e) {
+                e.preventDefault()
+                var $message = $(this);
+                var messageId = $message.parent().data("id");
 
-            // Optional: Auto-close the modal after form submission
-            document.getElementById('newChatForm').addEventListener('submit', function() {
-                // Delay closing modal to allow form submission
-                setTimeout(() => {
-                    let modal = new bootstrap.Modal(document.getElementById('newChatModal'));
-                    modal.hide();
-                }, 500);
-            });
+                $("#sharedDropdownMenu").find('.dropdown-item').each(function() {
+
+                })
+
+                var offset = $message.offset();
+                var messageHeight = $message.outerHeight();
+                var messageWidth = $message.outerWidth();
+
+                var dropdownHeight = $('#sharedDropdownMenu').outerHeight();
+                var dropdownWidth = $('#sharedDropdownMenu').outerWidth();
+
+
+                var topPosition = offset.top + messageHeight;
+                var leftPosition = offset.left + messageWidth - dropdownWidth;
+
+
+                if (topPosition + dropdownHeight > $(window).height()) {
+                    topPosition = offset.top - dropdownHeight;
+                }
+
+                if (leftPosition + dropdownWidth > $(window).width()) {
+                    leftPosition = offset.left - dropdownWidth;
+                }
+
+                $('#sharedDropdownMenu').css({
+                    top: topPosition,
+                    left: leftPosition
+                });
+
+                $("#sharedDropdownMenu").show();
+                $("#chat-box").addClass('overflow-hidden')
+                $("#chat-box").removeClass('overflow-auto')
+            })
+
+            $(document).on("click keydown contextmenu", function(e) {
+                if (!$(e.target).closest(".message").length && !$(e.target).closest("#sharedDropdownMenu").length) {
+                    $("#sharedDropdownMenu").hide();
+                    $("#chat-box").addClass('overflow-auto')
+                    $("#chat-box").removeClass('overflow-hidden')
+                }
+            })
         });
     </script>
 {% endblock %}

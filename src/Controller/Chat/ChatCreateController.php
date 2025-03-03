@@ -6,6 +6,7 @@ namespace App\Controller\Chat;
 
 use App\Entity\Chat;
 use App\Form\CreateChatFormType;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +17,8 @@ class ChatCreateController extends AbstractController
 {
 
     public function __construct(
-        protected EntityManagerInterface $entityManager
+        protected EntityManagerInterface $entityManager,
+        protected UserRepository $userRepository,
     )
     {
     }
@@ -34,6 +36,13 @@ class ChatCreateController extends AbstractController
             $chat = new Chat();
             $chat->setName($chatName);
             $chat->addUser($this->getUser());
+            $participants = explode(",", $form->get('participants')->get('tags')->getData());
+            foreach ($participants as $participant) {
+                $user = $this->userRepository->findOneBy(['username' => $participant]);
+                if ($user && !$chat->getUsers()->contains($user)) {
+                    $chat->addUser($user);
+                }
+            }
 
             $this->entityManager->persist($chat);
             $this->entityManager->flush();

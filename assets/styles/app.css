@@ -1,5 +1,46 @@
 @import '~bootstrap';
+@import '~bootstrap-tagsinput/dist/bootstrap-tagsinput.css';
 
-body {
-    background-color: lightgray;
+.bootstrap-tagsinput {
+    width: 100%;
+    background-color: var(--bs-secondary);
+    color: var(--bs-light);
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--bs-border-radius);
+    line-height: 1.5;
+    border: 0;
+    font-size: 1rem;
 }
+
+.bootstrap-tagsinput .tag {
+    background-color: #007bff;
+    color: white;
+    padding: 0px 5px;
+    border-radius: 5px;
+    display: inline-block;
+    font-size: 0.875rem;
+}
+
+.bootstrap-tagsinput .tag:hover {
+    background-color: #0056b3;
+}
+
+.bootstrap-tagsinput .tag .close {
+    color: white;
+    font-size: 14px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.bootstrap-tagsinput input:focus {
+    border-color: #007bff;
+    background-color: var(--bs-secondary);
+    color: white;
+    outline: none;
+}
+
+.bootstrap-tagsinput input {
+    margin: 0;
+}
+
+
