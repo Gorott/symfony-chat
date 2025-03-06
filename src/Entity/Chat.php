@@ -6,6 +6,7 @@ use App\Repository\ChatRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=ChatRepository::class)
@@ -16,6 +17,7 @@ class Chat
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @Groups({"chat:read"})
      */
     private $id;
 
@@ -26,11 +28,13 @@ class Chat
 
     /**
      * @ORM\OneToMany(targetEntity=Message::class, mappedBy="chat", orphanRemoval=true)
+     * @Groups({"chat:read"})
      */
     private $messages;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"chat:read"})
      */
     private $name;
 

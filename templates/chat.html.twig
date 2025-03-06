@@ -1,13 +1,14 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
+    {% set currentRoomObject = currentRoom is not null ? currentRoom | json_decode : null %}
     <div class="d-flex vh-100">
-
+        <!-- Chat rooms list -->
         <div class="bg-dark text-white p-3 d-flex flex-column" style="width: 280px;">
             <h4 class="text-center">Chats</h4>
             <ul class="list-unstyled flex-grow-1 overflow-auto">
                 {% for room in chatRooms %}
-                    <li class="p-2 {% if currentRoom is not null and room.id == currentRoom.id %}bg-primary{% else %}bg-dark{% endif %}">
+                    <li class="p-2 {% if currentRoomObject and room.id == currentRoomObject.id %}bg-primary{% else %}bg-dark{% endif %}">
                         <a href="{{ path('app_chat_room', {'id': room.id}) }}" class="text-white text-decoration-none d-block">
                             {{ room.name }}
                         </a>
@@ -21,50 +22,51 @@
             </div>
         </div>
 
-
+        <!-- Chat area -->
         <div class="d-flex flex-column flex-grow-1">
-
             <div class="bg-primary text-white text-center py-3">
                 <h2 class="mb-0">{{ currentRoom.name ?? 'Select a Chat' }}</h2>
             </div>
 
-            <div id="chat-box" class="flex-grow-1 p-3 overflow-auto bg-light">
-                {% if currentRoom is not null %}
-                    {% set lastMessageDate = null %}
+            <!-- Chat box -->
+            <div id="chat-box" class="p-3 overflow-auto bg-light flex-grow-1" style="max-width: 1640px;">
+                {% if currentRoom %}
+                    <div id="load-more-messages" class="text-center" style="display: none;"></div>
+                    <div id="messages-container">
+                        {% set lastMessageDate = null %}
+                        {% for message in messages %}
+                            {% set messageDate = message.createdAt|date('Y-m-d') %}
+                            {% set formattedDate = message.createdAt|chat_date %}
 
-                    {% for message in currentRoom.messages %}
-                        {% set messageDate = message.createdAt|date('Y-m-d') %}
-                        {% set formattedDate = message.createdAt|chat_date %}
+                            {% if lastMessageDate is not same as(messageDate) %}
+                                <div class="d-flex align-items-center my-3" data-date="{{ messageDate }}">
+                                    <hr class="flex-grow-1">
+                                    <span class="mx-3 text-muted small">{{ formattedDate }}</span>
+                                    <hr class="flex-grow-1">
+                                </div>
+                            {% endif %}
 
-                        {% if lastMessageDate is not same as(messageDate) %}
-                            <div class="d-flex align-items-center my-3">
-                                <hr class="flex-grow-1">
-                                <span class="mx-3 text-muted small">{{ formattedDate }}</span>
-                                <hr class="flex-grow-1">
-                            </div>
-                        {% endif %}
-
-                        {% include 'chat/message.html.twig' %}
-
-                        {% set lastMessageDate = messageDate %}
-                    {% else %}
-                        <p class="text-muted text-center">No messages yet. Start the conversation!</p>
-                    {% endfor %}
+                            {% include 'chat/message.html.twig' %}
+                            {% set lastMessageDate = messageDate %}
+                        {% else %}
+                            <p class="text-muted text-center">No messages yet. Start the conversation!</p>
+                        {% endfor %}
+                    </div>
 
                     <div class="dropdown-menu custom-dropdown" id="sharedDropdownMenu">
-                        <a class="dropdown-item" href="#">Reply</a>
-                        <a class="dropdown-item" href="#">Forward</a>
-                        <a class="dropdown-item" href="#">Delete</a>
+                        <a class="dropdown-item delete-message" href="{{ path('app_delete_message', {'id': -1}) }}">Delete</a>
+                        <a class="dropdown-item edit-message">Edit</a>
                     </div>
                 {% endif %}
             </div>
 
-
+            <!-- Send message form -->
             {% if app.user and currentRoom %}
-                <form method="post" action="{{ path('app_send_message', {'id': currentRoom.id}) }}" class="d-flex p-3 bg-white border-top">
+                <form method="post" action="{{ path('app_send_message', {'id': currentRoomObject.id}) }}" class="d-flex p-3 bg-white border-top">
                     {{ form_start(sendMessageForm, {'attr': {'class': 'form', 'id': 'newChatForm'}}) }}
                     {{ form_widget(sendMessageForm.content) }}
                     {{ form_end(sendMessageForm) }}
+                </form>
             {% elseif app.user %}
                 <div class="text-center py-3 bg-white border-top">
                     <p class="text-muted">Select a chat room to start messaging.</p>
@@ -77,7 +79,7 @@
         </div>
     </div>
 
-
+    <!-- New Chat Modal -->
     <div class="modal fade" id="newChatModal" tabindex="-1" aria-labelledby="newChatModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-light border-secondary shadow-lg rounded-3">
@@ -95,7 +97,6 @@
                         <div class="mb-3">
                             {{ form_row(createChatForm.participants) }}
                         </div>
-
                         {{ form_end(createChatForm) }}
                     </form>
                 </div>
@@ -103,70 +104,207 @@
         </div>
     </div>
 
-
-
-    {% endblock %}
+{% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     <script>
+        const currentRoom = JSON.parse({{ currentRoom | json_encode | raw }});
         document.addEventListener("DOMContentLoaded", function() {
-            console.log("Chat page loaded");
-            const chatBox = document.getElementById("chat-box");
-            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const chatBox = $('#chat-box');
+            chatBox.scrollTop(chatBox[0].scrollHeight);
+
+
+            document.addEventListener("input", function(e) {
+
+                if (e.target.tagName.toLowerCase() === "textarea") {
+                    e.target.style.height = "auto";
+                    let newHeight = e.target.scrollHeight;
+
+                    let maxHeight = e.target.dataset.maxHeight ? e.target.dataset.maxHeight : 250;
+                    if (newHeight <= maxHeight) {
+                        e.target.style.height = newHeight + "px";
+                    } else {
+                        e.target.style.height = maxHeight + "px";
+                    }
+                }
+            });
+
+
             const tagsInput = document.querySelector('.tags-input');
             if (tagsInput) {
-                $(tagsInput).tagsinput({
-                    maxTags: 20,
-                    delimiter: [','],
-                });
+                $(tagsInput).tagsinput({ maxTags: 20, delimiter: [','] });
             }
-            $(".message").on("contextmenu", function(e) {
-                e.preventDefault()
-                var $message = $(this);
-                var messageId = $message.parent().data("id");
-
-                $("#sharedDropdownMenu").find('.dropdown-item').each(function() {
-
-                })
-
-                var offset = $message.offset();
-                var messageHeight = $message.outerHeight();
-                var messageWidth = $message.outerWidth();
-
-                var dropdownHeight = $('#sharedDropdownMenu').outerHeight();
-                var dropdownWidth = $('#sharedDropdownMenu').outerWidth();
 
 
-                var topPosition = offset.top + messageHeight;
-                var leftPosition = offset.left + messageWidth - dropdownWidth;
+            $(".message").on("contextmenu", async function(e) {
+                e.preventDefault();
+                var messageId = $(this).parent().data("message-id");
 
+                await updateMessagePermissions(messageId);
+                showDropdownMenu(e.pageX, e.pageY);
+            });
 
-                if (topPosition + dropdownHeight > $(window).height()) {
-                    topPosition = offset.top - dropdownHeight;
-                }
-
-                if (leftPosition + dropdownWidth > $(window).width()) {
-                    leftPosition = offset.left - dropdownWidth;
-                }
-
-                $('#sharedDropdownMenu').css({
-                    top: topPosition,
-                    left: leftPosition
-                });
-
-                $("#sharedDropdownMenu").show();
-                $("#chat-box").addClass('overflow-hidden')
-                $("#chat-box").removeClass('overflow-auto')
-            })
 
             $(document).on("click keydown contextmenu", function(e) {
-                if (!$(e.target).closest(".message").length && !$(e.target).closest("#sharedDropdownMenu").length) {
-                    $("#sharedDropdownMenu").hide();
-                    $("#chat-box").addClass('overflow-auto')
-                    $("#chat-box").removeClass('overflow-hidden')
+                if (!$(e.target).closest('.message').length && !$(e.target).closest("#sharedDropdownMenu").length) {
+                    closeDropdown();
                 }
-            })
+            });
+
+
+            chatBox[0].addEventListener('scroll', function() {
+                if (chatBox.scrollTop() === 0 && currentRoom) {
+                    loadMessages();
+                }
+            });
         });
+
+
+        async function updateMessagePermissions(messageId) {
+            const permissions = [
+                { selector: '.delete-message', permission: 'MSG_DELETE' },
+                { selector: '.edit-message', permission: 'MSG_EDIT' }
+            ];
+
+            for (const item of permissions) {
+                const canPerform = await checkPermission(messageId, item.permission);
+                const $dropdownItem = $("#sharedDropdownMenu").find(item.selector);
+                $dropdownItem.toggle(canPerform).prop('disabled', !canPerform);
+            }
+
+            $("#sharedDropdownMenu").find('.delete-message').attr('href', '{{ path('app_delete_message', {'id': -1}) }}'.replace('-1', messageId));
+            $("#sharedDropdownMenu").find('.edit-message').attr('onclick', 'editMessage(' + messageId + ')');
+        }
+
+
+        function loadMessages() {
+            if (!currentRoom) return;
+
+            var lastMessageId = $("#messages-container .message").first().parent().data("message-id");
+            var url = '{{ path('app_load_messages', {'id': '__ID__'}) }}'.replace('__ID__', currentRoom.id);
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                timeout: 1000,
+                data: { lastMessageId: lastMessageId }
+            }).then(function(response) {
+                if (response['messages'].length > 0) {
+                    appendMessages(response['messages']);
+                }
+            });
+        }
+
+        function appendMessages(messages) {
+            const lastMessage = JSON.parse(messages[0]['message']);
+            let lastMessageDate = formatMessageDate(new Date(lastMessage['createdAt']));
+            messages.shift();
+
+            messages.forEach(messageData => {
+                const message = JSON.parse(messageData['message']);
+                const messageDate = formatMessageDate(new Date(message['createdAt']));
+                const  lastDate = new Date(lastMessage['createdAt']).toLocaleDateString('en-CA');
+
+                $("#messages-container").prepend(messageData['html']);
+
+                if (lastMessageDate !== messageDate || messages.indexOf(messageData) === messages.length - 1) {
+                    $("#messages-container").prepend(
+                        `<div class="d-flex align-items-center my-3" data-date="${lastDate}">
+                            <hr class="flex-grow-1">
+                            <span class="mx-3 text-muted small">${messageDate}</span>
+                            <hr class="flex-grow-1">
+                        </div>`
+                    );
+                    lastMessageDate = messageDate;
+                } else {
+                    const existingDivider = $(`#messages-container`).find('[data-date]').filter(function() {
+                        return this.dataset.date === lastDate;
+                    })
+                    console.log(existingDivider);
+
+                    if (existingDivider.length) {
+                        existingDivider.remove();
+                    }
+                }
+            });
+
+            const lastMessageObject = $('#messages-container').find('[data-message-id]').filter(function() {
+                return this.dataset.messageId === lastMessage.id;
+            });
+
+
+
+            if (lastMessageObject.length) {
+                const chatBox = $('#chat-box');
+                chatBox.scrollTop(lastMessageObject.offset().top - chatBox.offset().top + chatBox.scrollTop());
+            }
+        }
+
+        function formatMessageDate(date) {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            } else {
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+
+        function showDropdownMenu(mouseX, mouseY) {
+            const dropdownMenu = $('#sharedDropdownMenu');
+            const dropdownHeight = dropdownMenu.outerHeight();
+            const dropdownWidth = dropdownMenu.outerWidth();
+            let topPosition = mouseY;
+            let leftPosition = mouseX;
+
+            if (topPosition + dropdownHeight > $(window).height()) topPosition = mouseY - dropdownHeight;
+            if (leftPosition + dropdownWidth > $(window).width()) leftPosition = mouseX - dropdownWidth;
+
+            dropdownMenu.css({ top: topPosition, left: leftPosition }).show();
+            $('#chat-box').addClass('overflow-hidden').removeClass('overflow-auto');
+        }
+
+
+        function closeDropdown() {
+            $("#sharedDropdownMenu").hide();
+            $('#chat-box').removeClass('overflow-hidden').addClass('overflow-auto');
+        }
+
+
+        function checkPermission(messageId, permission) {
+            return $.ajax({
+                url: '{{ path('app_check_permission', {'entity': 'message', 'id': '__messageId__', 'permission': '__permission__'}) }}'.replace('__messageId__', messageId).replace('__permission__', permission),
+                method: 'GET',
+                timeout: 1000,
+            }).then(function(response) {
+                return response['isGranted'];
+            });
+        }
+
+        function editMessage(messageId) {
+            const messageContainer = $(`#messages-container [data-message-id=${messageId}]`);
+            let messageContent = messageContainer.find('#message-container').text().trim();
+            messageContent = messageContent.replace(/\(edited\)/, '').trim();
+            const editFormContainer = messageContainer.find('#edit-form-container');
+
+            editFormContainer.find('textarea').val(messageContent);
+            editFormContainer.show();
+            messageContainer.find('#message-container').hide();
+            closeDropdown();
+        }
+
+        function cancelEdit(messageId) {
+            const messageContainer = $(`#messages-container [data-message-id=${messageId}]`);
+            const editFormContainer = messageContainer.find('#edit-form-container');
+
+            editFormContainer.hide();
+            messageContainer.find('#message-container').show();
+        }
     </script>
 {% endblock %}

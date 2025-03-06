@@ -15,12 +15,13 @@ class SendMessageFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('content', TextType::class, [
+            ->add('content', TextareaType::class, [
                 'label' => false,
                 'attr' => [
                     'class' => 'form-control me-2',
                     'placeholder' => 'Type your message here...',
                     'autocomplete' => 'off',
+                    'rows' => 1,
                 ]
             ])
             ->add('submit', SubmitType::class, [
@@ -36,6 +37,7 @@ class SendMessageFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Message::class,
+            'csrf_protection' => false,
         ]);
     }
 }

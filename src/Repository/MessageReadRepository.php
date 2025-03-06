@@ -2,32 +2,32 @@
 
 namespace App\Repository;
 
-use App\Entity\Message;
+use App\Entity\MessageRead;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Message>
+ * @extends ServiceEntityRepository<MessageRead>
  *
- * @method Message|null find($id, $lockMode = null, $lockVersion = null)
- * @method Message|null findOneBy(array $criteria, array $orderBy = null)
- * @method Message[]    findAll()
- * @method Message[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method MessageRead|null find($id, $lockMode = null, $lockVersion = null)
+ * @method MessageRead|null findOneBy(array $criteria, array $orderBy = null)
+ * @method MessageRead[]    findAll()
+ * @method MessageRead[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class MessageRepository extends ServiceEntityRepository
+class MessageReadRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Message::class);
+        parent::__construct($registry, MessageRead::class);
     }
 
     /**
      * @throws ORMException
      * @throws OptimisticLockException
      */
-    public function add(Message $entity, bool $flush = true): void
+    public function add(MessageRead $entity, bool $flush = true): void
     {
         $this->_em->persist($entity);
         if ($flush) {
@@ -39,7 +39,7 @@ class MessageRepository extends ServiceEntityRepository
      * @throws ORMException
      * @throws OptimisticLockException
      */
-    public function remove(Message $entity, bool $flush = true): void
+    public function remove(MessageRead $entity, bool $flush = true): void
     {
         $this->_em->remove($entity);
         if ($flush) {
@@ -47,21 +47,10 @@ class MessageRepository extends ServiceEntityRepository
         }
     }
 
-    public function findMessagesBeforeId($chat, $lastMessageId, int $limit = 50)
-    {
-        return $this->createQueryBuilder('m')
-            ->where('m.chat = :chat')
-            ->andWhere('m.id < :lastMessageId')
-            ->setParameter('chat', $chat)
-            ->setParameter('lastMessageId', $lastMessageId)
-            ->orderBy('m.id', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
+
 
     // /**
-    //  * @return Message[] Returns an array of Message objects
+    //  * @return MessageRead[] Returns an array of MessageRead objects
     //  */
     /*
     public function findByExampleField($value)
@@ -78,7 +67,7 @@ class MessageRepository extends ServiceEntityRepository
     */
 
     /*
-    public function findOneBySomeField($value): ?Message
+    public function findOneBySomeField($value): ?MessageRead
     {
         return $this->createQueryBuilder('m')
             ->andWhere('m.exampleField = :val')

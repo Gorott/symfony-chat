@@ -1,12 +1,17 @@
-
-{% block body %}
-
-    <div class="d-flex {% if message.author == app.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2" data-id="message-{{ message.id }}">
-        <div class="p-2 rounded {% if message.author == app.user %}bg-primary text-white{% else %}bg-secondary text-light{% endif %} message">
-            <strong>{{ message.author.username }}</strong>: {{ message.content }}
-            <small class="d-block">{{ message.createdAt|date('H:i') }}</small>
-            <div class="dropdown">
-            </div>
+<div class="d-flex justify-content-start" data-message-id="{{ message.id }}">
+    <div class="p-2 message" style="display: inline-block; width: 100%; word-wrap: break-word;">
+        <strong>{{ message.author.username }}</strong>
+        <small> -  {{ message.createdAt|date('H:i') }}</small>
+        <p class="mb-0" id="message-container">{{ message.content }}
+            {% if message.updatedAt is not null %}
+                <small class="text-muted" style="font-size: 0.6rem;">(edited)</small>
+            {% endif %}</p>
+        <div id="edit-form-container" class="w-100" style="display: none;">
+            <form id="edit-form" action="{{ path('app_edit_message', {'id': message.id}) }}" method="post">
+                <textarea name="send_message_form[content]" class="form-control" rows="1">{{ message.content }}</textarea>
+                <button type="submit" name="send_message_form[submit]"class="btn btn-primary">Save</button>
+                <button type="button" onclick="cancelEdit({{ message.id }})" class="btn btn-secondary">Cancel</button>
+            </form>
         </div>
     </div>
-{% endblock %}
+</div>
