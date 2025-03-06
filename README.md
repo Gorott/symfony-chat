@@ -1,1 +1,1 @@
-# realtime-chat
+# symfony-chat
